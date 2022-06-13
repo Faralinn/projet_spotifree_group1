@@ -10,9 +10,9 @@ import mariadb
 class gestion_SQL():
     '''
     Classe dédiée pour la gestion des requêtes SQL 
-    => chercher
-    => ajouter
-    => supprimer
+    => chercher dans la database
+    => ajouter dans la database
+    => supprimer dans la database
     '''
     def __init__(self):
         '''
@@ -26,11 +26,26 @@ class gestion_SQL():
             database="spotifree"
         )
         self.cur = self.conn.cursor()
-    
-    def insertion(self,data,table):
+
+    def insertion(self,table,colonnes,data):
+        '''
+        Fonction qui permet d'ajouter un element dans la base de donnee
+        '''
+        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
-        self.sql= "INSERT ? INTO "
-        self.data=(data,)
+        # colonnes doit être une chaine de caractère entre "" => ex: colonnes="nom, age, Etat"
+        self.colonnes=colonnes
+        # data doit être un tuple où chaque valeur séparée par une virgule est entre '' => ex: data=('john','52','Texas')
+        self.data=data
+        self.query=f"INSERT INTO {self.table} ({self.colonnes}) VALUES {self.data}"
+        self.cur.execute(query)
+    
+    def search (self,data,table):
+        '''
+        Fonction qui permet de chercher un element dans la base de donnee
+        '''
+        self.query="SELECT FROM;"
+        self.cur.execute(query)
 
 ###
 class Socket():
