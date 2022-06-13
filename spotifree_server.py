@@ -6,36 +6,31 @@ import socket
 import _thread
 import mariadb
 
-
 ###
-class Spotifriend():
+class gestion_SQL():
     '''
-    Classe qui va nous permettre de manipuler et créer les objets "Spotifriend", à partir d'une bdd
-    => création d'identifiant/mdp
-    => possib d'ajout d'ami
-    => possib de supprimer un ami
-    => voir liste d'amis
-    => droits de read sur les playlists
+    Classe dédiée pour la gestion des requêtes SQL 
+    => chercher
+    => ajouter
+    => supprimer
     '''
-    def __init__(self,id,mdp):
+    def __init__(self):
         '''
-        Fonction d'initialisation pour la classe Spotifriend
+        Constructeur. Initialise la connexion avec la database et le curseur
         '''
-        self.id=id
-        self.mdp=mdp
-
-    def creation_id():
-        '''
-        Fonction pour créer les id et mdp lors d'une première connexion : ajout au fichier json dédié
-        '''
-    def check_id():
-        '''
-        Fonction pour comparer les inputs id/mdp avec le fichier json
-        '''
-    def ajout_ami():
-        '''
-        Fonction
-        '''
+        self.conn = mariadb.connect(
+            user="server_master",
+            password="server_master",
+            host="addresseIP_du_docker",
+            port=3306,
+            database="spotifree"
+        )
+        self.cur = self.conn.cursor()
+    
+    def insertion(self,data,table):
+        self.table=table
+        self.sql= "INSERT ? INTO "
+        self.data=(data,)
 
 ###
 class Socket():
@@ -101,21 +96,34 @@ class Socket():
                 print(" client :",new_client.addr," connected ")
 
 ###
-class gestion_SQL():
+class Spotifriend():
     '''
-    Classe dédiée pour la gestion des requêtes SQL 
+    Classe qui va nous permettre de manipuler et créer les objets "Spotifriend", à partir d'une bdd
+    => création d'identifiant/mdp
+    => possib d'ajout d'ami
+    => possib de supprimer un ami
+    => voir liste d'amis
+    => droits de read sur les playlists
     '''
-    def __init__(self):
+    def __init__(self,id,mdp):
         '''
-        Constructeur. Initialise la connexion avec la database et le curseur
+        Fonction d'initialisation pour la classe Spotifriend
         '''
-        self.conn = mariadb.connect(
-            user="server_master",
-            password="server_master",
-            host="addresseIP_du_docker",
-            port=3306,
-            database="spotifree"
-        )
-        self.cur = self.conn.cursor()
+        self.id=id
+        self.mdp=mdp
+
+    def creation_id():
+        '''
+        Fonction pour créer les id et mdp lors d'une première connexion : ajout à la table dédiée
+        '''
+    def check_id():
+        '''
+        Fonction pour comparer les inputs id/mdp avec le fichier json
+        '''
+    def ajout_ami():
+        '''
+        Fonction
+        '''
+
 
 
