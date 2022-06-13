@@ -73,6 +73,19 @@ class Socket():
                     except:
                         self.remove(connection)
 
+
+    def send_msg(self,message,connection,client):
+        '''
+        Fonction send qui envoie le message donné en argument sur un fil (donc à un client connecté)
+        Si erreur lors du send, on supprime la connexion défectueuse
+        '''
+        if client.clientsocket != connection.clientsocket:
+            try:
+                client.clientsocket.send(message)
+                client.clientsocket.send(connection.user.encode())
+            except:
+                self.remove(connection)
+
     def accept_connection(self):
         '''
         Fonction qui accepte les connexions socket et attribue un fil (thread) à chaque utilisateur
