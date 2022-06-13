@@ -24,13 +24,18 @@ class Spotifriend():
         self.id=id
         self.mdp=mdp
 
-    def identifiants():
+    def creation_id():
         '''
-        Fonction pour gérer les id et mdp des clients
-        => possib de créer les id et mdp lors d'une première connexion et ajout au fichier json dédié
-        => possib de comparer les inputs avec le fichier json
+        Fonction pour créer les id et mdp lors d'une première connexion : ajout au fichier json dédié
         '''
-
+    def check_id():
+        '''
+        Fonction pour comparer les inputs id/mdp avec le fichier json
+        '''
+    def ajout_ami():
+        '''
+        Fonction
+        '''
 
 ###
 class Socket():
@@ -73,13 +78,14 @@ class Socket():
         Fonction qui accepte les connexions socket et attribue un fil (thread) à chaque utilisateur
         TO DO => attribuer id/mdp 
         '''
-            while True:
-                new_client=self.s.accept()
-                if new_client:
-                    new_client=Client(new_client)
-                    self.clients.append(new_client)
-                    _thread.start_new_thread(new_client.run,(self.q,))
-                    print(" client :",new_client.addr," connected ")
+        self.a=True
+        while self.a==True:
+            new_client=self.soc.accept()
+            if new_client:
+                new_client=Client(new_client)
+                self.clients.append(new_client)
+                _thread.start_new_thread(new_client.run,(self.q,))
+                print(" client :",new_client.addr," connected ")
 
 ###
 class gestion_SQL():
@@ -87,11 +93,16 @@ class gestion_SQL():
     Classe dédiée pour la gestion des requêtes SQL 
     '''
     def __init__(self):
+        '''
+        Constructeur. Initialise la connexion avec la database et le curseur
+        '''
         self.conn = mariadb.connect(
             user="server_master",
             password="server_master",
-            host="localhost",
+            host="addresseIP_du_docker",
             port=3306,
             database="spotifree"
         )
         self.cur = self.conn.cursor()
+
+
