@@ -9,9 +9,9 @@ import mariadb
 ###
 class gestion_SQL():
     '''
-    Classe dédiée pour la gestion des requêtes SQL 
-    => chercher dans la database
+    Classe dediee pour la gestion des requetes SQL 
     => ajouter dans la database
+    => chercher dans la database
     => supprimer dans la database
     '''
     def __init__(self):
@@ -40,13 +40,27 @@ class gestion_SQL():
         self.query=f"INSERT INTO {self.table} ({self.colonnes}) VALUES {self.data}"
         self.cur.execute(query)
     
-    def search (self,data,table):
+    def search (self,condition,table):
         '''
         Fonction qui permet de chercher un element dans la base de donnee
         '''
-        self.query="SELECT FROM;"
+        # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
+        self.condition=condition
+        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
+        self.table=table
+        self.query=f"SELECT * FROM {table} WHERE {condition};"
         self.cur.execute(query)
-
+    
+    def delete (self,condition,table):
+        '''
+        Fonction qui permet de supprimer un element de la base de donnee
+        '''
+        # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
+        self.condition=condition
+        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
+        self.table=table
+        self.query=f"DELETE FROM {table} WHERE {condition};"
+        self.cur.execute(query)
 ###
 class Socket():
     def __init__(self,host,port):
@@ -113,7 +127,7 @@ class Socket():
 ###
 class Spotifriend():
     '''
-    Classe qui va nous permettre de manipuler et créer les objets "Spotifriend", à partir d'une bdd
+    Classe qui va nous permettre de manipuler et créer les objets "Spotifriend", à partir du server sql
     => création d'identifiant/mdp
     => possib d'ajout d'ami
     => possib de supprimer un ami
