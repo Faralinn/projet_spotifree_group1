@@ -19,11 +19,11 @@ class gestion_SQL():
         Constructeur. Initialise la connexion avec la database et le curseur
         '''
         self.conn = mariadb.connect(
-            user="server_master",
-            password="server_master",
-            host="addresseIP_du_docker",
+            user="thurux",
+            password="thurux",
+            host="127.0.0.1",
             port=3306,
-            database="spotifree"
+            database="BDPM"
         )
         self.cur = self.conn.cursor()
 
@@ -46,10 +46,15 @@ class gestion_SQL():
         '''
         # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
         self.condition=condition
+        print("DANS SEARCH",self.condition)
         # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
+        print("DANS SEARCH",self.table)
         self.query=f"SELECT * FROM {table} WHERE {condition};"
-        self.cur.execute(query)
+        print("DANS SEARCH",self.query)
+        self.cur.execute(self.query)
+        self.results=self.cur.fetchall()
+        return(self.results)
     
     def delete (self,condition,table):
         '''
@@ -60,7 +65,10 @@ class gestion_SQL():
         # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
         self.query=f"DELETE FROM {table} WHERE {condition};"
-        self.cur.execute(query)
+        self.cur.execute(self.query)
+
+
+sql=gestion_SQL()
 ###
 class ServerSocket():
     def __init__(self,host,port):
@@ -78,17 +86,27 @@ class ServerSocket():
 
         self.soc.bind((self.HOST, self.PORT))
 
-# on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
+        # on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
         print("Server listening...")
         self.soc.listen(5)
-        print("----MARQUE 1 ----\n")
 
     def FONCTION_THREAD(self, client_soc):
-        print("----MARQUE 3 ----\n")
-        client_soc.send(str.encode('Welcome to the Servern'))
+        '''
+        Ce qui se passe sur chaque thread pour chaque client => bcp trop important... !!
+        '''
+        #client_soc.send(str.encode('Welcome to the Servern'))
+        client_soc.send(str.encode('Entrez table et condition pour la recherche SQL'))
         while True:
             data = client_soc.recv(2048)
-            reply = 'Server Says: ta requete est : ' + data.decode('utf-8')
+            data = data.decode('utf-8')
+            print("data =",data)
+            table, condition=data.split(",",1)
+            print("table =", table, "condition=", condition)
+            reply= str(sql.search(condition,table))
+            # => fonction id/mdp
+            # => fonction accueil/choix
+            # => redirection vers les commandes
+            #reply = 'Server Says: ta requete est : ' + data.decode('utf-8')
             if not data:
                 break
             client_soc.sendall(str.encode(reply))
@@ -96,10 +114,9 @@ class ServerSocket():
 
     def accept_connection(self):
         '''
-    Fonction qui accepte les connexions socket et attribue un fil (thread) à chaque utilisateur
-    TO DO => attribuer id/mdp 
+        Fonction qui accepte les connexions socket et attribue un fil (thread) a chaque utilisateur
         '''
-        print("----MARQUE 2 ----\n")
+
         self.a=True
         while self.a==True:
             new_client, address=self.soc.accept()
@@ -111,10 +128,8 @@ class ServerSocket():
                 self.ThreadCount += 1
                 print('Thread Number: ' + str(self.ThreadCount))
 
-
     def run(self) :
         self.accept_connection()
-        print("----MARQUE 4 ----\n")
 
 ###
 class Spotifriend():
@@ -145,10 +160,9 @@ class Spotifriend():
         '''
         Fonction
         '''
-
 # Main
 host="127.0.0.1"
-port=9898
+port=9886
 server=ServerSocket(host,port)
 server.run()
 
