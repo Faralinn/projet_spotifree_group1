@@ -3,7 +3,7 @@
 # SERVER
 ######################
 import socket
-import _thread
+from _thread import *
 import mariadb
 
 ###
@@ -62,7 +62,7 @@ class gestion_SQL():
         self.query=f"DELETE FROM {table} WHERE {condition};"
         self.cur.execute(query)
 ###
-class Socket():
+class ServerSocket():
     def __init__(self,host,port):
         '''
         Fonction d'initialisation du socket server
@@ -74,55 +74,47 @@ class Socket():
         self.HOST=host
         self.PORT=port
         self.clients=[]
+        self.ThreadCount = 0
 
-        # on bind sur l'hôte et le port donné en paramètre
-        print(" Binding to ",self.HOST+":"+str(self.PORT))
         self.soc.bind((self.HOST, self.PORT))
 
-        # on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
-        print("Server listening..")
+# on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
+        print("Server listening...")
         self.soc.listen(5)
+        print("----MARQUE 1 ----\n")
 
-    def broadcast(self,message,connection):
-        '''
-        Fonction broadcast qui renvoie le message donné en argument sur tous les fils (donc à tous les clients connectés) 
-        sauf à celui qui envoie le message
-        Si erreur lors de du broadcast, on supprime la connexion défectueuse
-        '''
-            for client in self.clients:
-                if client.clientsocket != connection.clientsocket:
-                    try:
-                        client.clientsocket.send(message)
-                        client.clientsocket.send(connection.user.encode())
-                    except:
-                        self.remove(connection)
-
-
-    def send_msg(self,message,connection,client):
-        '''
-        Fonction send qui envoie le message donné en argument sur un fil (donc à un client connecté)
-        Si erreur lors du send, on supprime la connexion défectueuse
-        '''
-        if client.clientsocket != connection.clientsocket:
-            try:
-                client.clientsocket.send(message)
-                client.clientsocket.send(connection.user.encode())
-            except:
-                self.remove(connection)
+    def FONCTION_THREAD(self, client_soc):
+        print("----MARQUE 3 ----\n")
+        client_soc.send(str.encode('Welcome to the Servern'))
+        while True:
+            data = client_soc.recv(2048)
+            reply = 'Server Says: ta requete est : ' + data.decode('utf-8')
+            if not data:
+                break
+            client_soc.sendall(str.encode(reply))
+        client_soc.close()
 
     def accept_connection(self):
         '''
-        Fonction qui accepte les connexions socket et attribue un fil (thread) à chaque utilisateur
-        TO DO => attribuer id/mdp 
+    Fonction qui accepte les connexions socket et attribue un fil (thread) à chaque utilisateur
+    TO DO => attribuer id/mdp 
         '''
+        print("----MARQUE 2 ----\n")
         self.a=True
         while self.a==True:
-            new_client=self.soc.accept()
+            new_client, address=self.soc.accept()
             if new_client:
-                new_client=Client(new_client)
                 self.clients.append(new_client)
-                _thread.start_new_thread(new_client.run,(self.q,))
-                print(" client :",new_client.addr," connected ")
+                
+                start_new_thread(self.FONCTION_THREAD,(new_client, ))
+                print(" client :",address," connected ")
+                self.ThreadCount += 1
+                print('Thread Number: ' + str(self.ThreadCount))
+
+
+    def run(self) :
+        self.accept_connection()
+        print("----MARQUE 4 ----\n")
 
 ###
 class Spotifriend():
@@ -154,5 +146,10 @@ class Spotifriend():
         Fonction
         '''
 
+# Main
+host="127.0.0.1"
+port=9898
+server=ServerSocket(host,port)
+server.run()
 
 
