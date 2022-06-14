@@ -46,10 +46,8 @@ class gestion_SQL():
         '''
         # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
         self.condition=condition
-        print("DANS SEARCH",self.condition)
         # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
-        print("DANS SEARCH",self.table)
         self.query=f"SELECT * FROM {table} WHERE {condition};"
         print("DANS SEARCH",self.query)
         self.cur.execute(self.query)
@@ -92,7 +90,7 @@ class ServerSocket():
 
     def FONCTION_THREAD(self, client_soc):
         '''
-        Ce qui se passe sur chaque thread pour chaque client => bcp trop important... !!
+        Ce qui se passe sur chaque thread pour chaque client => equivalent de notre main !!
         '''
         #client_soc.send(str.encode('Welcome to the Servern'))
         client_soc.send(str.encode('Entrez table et condition pour la recherche SQL'))
