@@ -31,9 +31,7 @@ class gestion_SQL():
         '''
         Fonction qui permet d'ajouter un element dans la base de donnee
         '''
-        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
-        # colonnes doit être une chaine de caractère entre "" => ex: colonnes="nom, age, Etat"
         self.colonnes=colonnes
         # data doit être un tuple où chaque valeur séparée par une virgule est entre '' => ex: data=('john','52','Texas')
         self.data=data
@@ -44,9 +42,7 @@ class gestion_SQL():
         '''
         Fonction qui permet de chercher un element dans la base de donnee
         '''
-        # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
         self.condition=condition
-        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
         self.query=f"SELECT * FROM {table} WHERE {condition};"
         print("DANS SEARCH",self.query)
@@ -62,9 +58,7 @@ class gestion_SQL():
         '''
         Fonction qui permet de supprimer un element de la base de donnee
         '''
-        # condition doit être une chaine de caractère entre "" => ex: condition="Code_CIS=700"
         self.condition=condition
-        # table doit être une chaine de caractère entre "" => ex: table="US_citizen"
         self.table=table
         self.query=f"DELETE FROM {table} WHERE {condition};"
         self.cur.execute(self.query)
