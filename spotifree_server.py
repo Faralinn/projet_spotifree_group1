@@ -52,7 +52,11 @@ class gestion_SQL():
         print("DANS SEARCH",self.query)
         self.cur.execute(self.query)
         self.results=self.cur.fetchall()
-        return(self.results)
+        for line in self.results:
+            chain=""
+            for element in line:
+                chain+=str(element)+" | "
+        return(chain)
     
     def delete (self,condition,table):
         '''
