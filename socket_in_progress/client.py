@@ -19,7 +19,7 @@ def envoyer(s):
 
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
-PORT = 8083  # The port used by the server
+PORT = 9999  # The port used by the server
 
 threads=[]
 
