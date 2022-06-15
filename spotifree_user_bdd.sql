@@ -78,7 +78,8 @@ CREATE TABLE listing (
     artist TEXT,
     release_date TEXT,
     length TEXT,
-    popularity TEXT
+    popularity TEXT,
+    dispo TEXT
 );
 
 
