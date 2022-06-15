@@ -5,6 +5,7 @@
 import socket
 from _thread import *
 import mariadb
+import import_spotipy as sp 
 
 ###
 class gestion_SQL():
@@ -85,28 +86,78 @@ class ServerSocket():
         # on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
         print("Server listening...")
         self.soc.listen(5)
+    def recherche(self,by_what,client_soc):
+        self.by_what=by_what
+        self.client_soc=client_soc
+        if self.by_what == "by_artist":
+            self.table="artiste"
+            self.client_soc.send(str.encode("Entrez le nom de l'artiste : "))
+            self.data = self.client_soc.recv(2048)
+            self.condition = self.data.decode('utf-8')
+            print("data/condition =",self.data)
+            sp.getDiscography(self.condition)
+            self.reply= str(sql.search(self.condition,self.table))
+            self.client_soc.sendall(str.encode(self.reply))
+            # check_download()
+        elif self.by_what == "by_album":
+            self.table="album"
+            self.client_soc.send(str.encode("Entrez le nom de l'album : "))
+            self.data = self.client_soc.recv(2048)
+            self.condition = self.data.decode('utf-8')
+            print("data/condition =",self.data)
+            sp.getDiscography(self.condition)
+            self.reply= str(sql.search(self.condition,self.table))
+            self.client_soc.sendall(str.encode(self.reply))
+            # check_download() 
+        elif self.by_what == "by_music":
+            self.table="musique"
+            self.client_soc.send(str.encode("Entrez le nom de la musique : "))
+            self.data = self.client_soc.recv(2048)
+            self.condition = self.data.decode('utf-8')
+            print("data/condition =",self.data)
+            sp.getDiscography(self.condition)
+            self.reply= str(sql.search(self.condition,self.table))
+            self.client_soc.sendall(str.encode(self.reply))
+            # check_download()
+        else:
+            pass
+
+    def fonction_menu(self,client_soc):
+        self.client_soc=client_soc
+        self.client_soc.send(str.encode(" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "))
+        self.data = self.client_soc.recv(2048)
+        self.data = self.data.decode('utf-8')
+        print("data =",self.data)
+        if self.data == "1":
+            # recherche=True
+            self.client_soc.send(str.encode(" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "))
+            self.data = self.client_soc.recv(2048)
+            self.data = self.data.decode('utf-8')
+            print("data =",self.data)
+            if self.data == "1":
+                self.by_what="by_artist"
+                self.recherche(self.by_what,self.client_soc)
+            elif data == "2":
+                self.by_what="by_album"
+                self.recherche(self.by_what,self.client_soc)
+            elif data == "3":
+                self.by_what="by_music"
+                self.recherche(self.by_what,self.client_soc)
+            else:
+                self.client_soc.send(str.encode("Erreur dans le choix"))
+                return(False)
+        else:
+            pass
 
     def FONCTION_THREAD(self, client_soc):
         '''
         Ce qui se passe sur chaque thread pour chaque client => equivalent de notre main !!
         '''
-        #client_soc.send(str.encode('Welcome to the Servern'))
-        client_soc.send(str.encode('Entrez table et condition pour la recherche SQL'))
+        self.client_soc=client_soc
+        # fonction login
         while True:
-            data = client_soc.recv(2048)
-            data = data.decode('utf-8')
-            print("data =",data)
-            table, condition=data.split(",",1)
-            print("table =", table, "condition=", condition)
-            reply= str(sql.search(condition,table))
-            # => fonction id/mdp
-            # => fonction accueil/choix
-            # => redirection vers les commandes
-            #reply = 'Server Says: ta requete est : ' + data.decode('utf-8')
-            if not data:
-                break
-            client_soc.sendall(str.encode(reply))
-        client_soc.close()
+            self.fonction_menu(self.client_soc)                          
+        self.client_soc.close()
 
     def accept_connection(self):
         '''
@@ -158,7 +209,7 @@ class Spotifriend():
         '''
 # Main
 host="127.0.0.1"
-port=9886
+port=9883
 server=ServerSocket(host,port)
 server.run()
 

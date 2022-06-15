@@ -1,11 +1,11 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-import pandas
-import time 
+from os import getenv
+import pandas 
 import re 
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
 #pandas : permet la création d'un dataframe et son importation en csv pour importation dans MariaDB
-#time permet d'importer la fonction sleep. re permet d'utiliser des expression régulières
+# re permet d'utiliser des expression régulières
 
 
 #bloc authentification à l'API spotify
@@ -134,8 +134,9 @@ def getDiscography(artist_name):
                 discography.append(track_data)
 
     df = pandas.DataFrame(discography, columns = ['id','name', 'album', 'artist', 'release_date', 'length', 'popularity']) #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
-    df.to_csv("/home/soufian/Documents/spotifree/spotify.csv", sep = ',',index=False)
+    path=getenv('HOME')+"/spotify.csv"
+    df.to_csv(path, sep = ',',index=False)
 
 
-query=input("Quel Artiste : ")
-getDiscography(query)
+# query=input("Quel Artiste : ")
+# getDiscography(query)

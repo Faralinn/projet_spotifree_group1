@@ -1,4 +1,3 @@
-
 login_function
 menu_function
 
@@ -29,7 +28,7 @@ menu_function
 (II) menu :
     -Chercher une musique :
         demander artiste 
-        -> fonction get_discography : charger .csv
+        -> fonction getDiscography : charger .csv
         -> demander titre (options random et list ?)
             musique trouvée :   
                 - ecouter
