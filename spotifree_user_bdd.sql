@@ -73,7 +73,7 @@ INSERT INTO identifiants VALUES (
 
 CREATE TABLE listing (
     id TEXT,
-    name TEXT,
+    title TEXT,
     album TEXT,
     artist TEXT,
     release_date TEXT,
