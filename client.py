@@ -2,7 +2,7 @@ import socket
 
 ClientSocket = socket.socket()
 host = '127.0.0.1'
-port = 9883
+port = 9869
 print('Waiting for connection')
 
 ClientSocket.connect((host, port))

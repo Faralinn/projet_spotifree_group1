@@ -24,7 +24,7 @@ class gestion_SQL():
             password="thurux",
             host="127.0.0.1",
             port=3306,
-            database="BDPM"
+            database="spotifree"
         )
         self.cur = self.conn.cursor()
 
@@ -39,15 +39,17 @@ class gestion_SQL():
         self.query=f"INSERT INTO {self.table} ({self.colonnes}) VALUES {self.data}"
         self.cur.execute(query)
     
-    def search (self,condition,colonnes):
+    def search (self,condition,colonnes,table):
         '''
         Fonction qui permet de chercher un element dans la base de donnee
         '''
+        self.table=table
         self.colonnes=colonnes
-        self.condition=self.colonnes+"LIKE %"+condition+"%"
-        self.query=f"SELECT {self.colonnes} FROM listing WHERE {self.condition};"
+        self.condition=condition
+        self.query=f"SELECT {self.colonnes} FROM {self.table} WHERE {self.condition};"
         self.cur.execute(self.query)
         self.results=self.cur.fetchall()
+        return(self.results)
         for line in self.results:
             chain=""
             for element in line:
@@ -70,7 +72,7 @@ class ServerSocket():
     def __init__(self,host,port):
         '''
         Fonction d'initialisation du socket server
-        => on donne l'hôte et le port en paramètre
+        => on donne l'hote et le port en parametre
         '''
         # création du socket et de la liste des clients
         self.soc=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,6 +86,23 @@ class ServerSocket():
         print("Server listening...")
         self.soc.listen(5)
 
+    def send_msg(self,client_soc,msg) :
+        '''
+        Fonction pour envoyer des donnees au client via socket
+        '''
+        self.msg=msg
+        self.client_soc=client_soc
+        self.client_soc.sendall(str.encode(self.msg))
+        
+    def receive_msg(self,client_soc) :
+        '''
+        Fonction pour recevoir les data du client via socket
+        '''
+        self.client_soc=client_soc
+        self.data = self.client_soc.recv(2048)
+        self.data = self.data.decode('utf-8')
+        return(self.data)
+
     def recherche(self,by_what,client_soc):
         '''
         Fonction qui demande au client via socket le nom de l'artiste, album ou musique pour executer la requete sql
@@ -91,39 +110,41 @@ class ServerSocket():
         '''
         self.by_what=by_what
         self.client_soc=client_soc
+        self.table="listing"
         if self.by_what == "by_artist":
-            self.colonnes="artist"
-            self.client_soc.send(str.encode("Entrez le nom de l'artiste : "))
-            self.data = self.client_soc.recv(2048)
-            self.condition = self.data.decode('utf-8')
-            print("data/condition =",self.data)
-            sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.colonnes))
-            self.client_soc.sendall(str.encode(self.reply))
-            self.menu_trouve()
+            self.colonnes="*"
+            self.msg="Entrez le nom de l'artiste : "
+            self.send_msg(self.client_soc, self.msg)
+            self.input = self.receive_msg(self.client_soc)
+            self.condition="artist"+" LIKE \"%"+self.input+"%\""
+            sp.getDiscography(self.input)
+            self.reply= str(sql.search(self.condition,self.colonnes,self.table))
+            print(self.reply)
+            self.send_msg(self.client_soc,self.reply)
+            # self.menu_trouve()
         elif self.by_what == "by_album":
             self.colonnes="album"
-            self.client_soc.send(str.encode("Entrez le nom de l'album : "))
-            self.data = self.client_soc.recv(2048)
-            self.condition = self.data.decode('utf-8')
-            print("data/condition =",self.data)
+            self.msg="Entrez le nom de l'album : "
+            self.send_msg(self.client_soc, self.msg)
+            self.condition = self.receive_msg(self.client_soc)
             sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.colonnes))
-            self.client_soc.sendall(str.encode(self.reply))
-            self.menu_trouve()
+            self.reply= str(sql.search(self.condition,self.colonnes,self.table))
+            self.send_msg(self.client_soc,self.reply)
+            # self.menu_trouve()
         elif self.by_what == "by_music":
             self.colonnes="title"
-            self.client_soc.send(str.encode("Entrez le nom de la musique : "))
-            self.data = self.client_soc.recv(2048)
-            self.condition = self.data.decode('utf-8')
-            print("data/condition =",self.data)
+            self.msg="Entrez le nom du titre : "
+            self.send_msg(self.client_soc, self.msg)
+            self.condition = self.receive_msg(self.client_soc)
             sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.colonnes))
-            self.client_soc.sendall(str.encode(self.reply))
-            if reply != "":
-                self.menu_trouve()
+            self.reply= str(sql.search(self.condition,self.colonnes,self.table))
+            self.send_msg(self.client_soc,self.reply)
+            # if reply != "":
+            #     self.menu_trouve()
         else:
-            print("Erreur dans la fonction recherche")
+            self.msg="Erreur dans la fonction recherche"
+            print(msg)
+            self.send_msg(msg)
             return(False)
 
     def fonction_menu(self,client_soc):
@@ -132,15 +153,15 @@ class ServerSocket():
         que le client souhaite realiser
         '''
         self.client_soc=client_soc
-        self.client_soc.send(str.encode(" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "))
-        self.data = self.client_soc.recv(2048)
-        self.data = self.data.decode('utf-8')
+        self.menu=" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "
+        self.send_msg(self.client_soc,self.menu)
+        self.data = self.receive_msg(self.client_soc)
         print("data =",self.data)
         if self.data == "1":
             # recherche=True
-            self.client_soc.send(str.encode(" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "))
-            self.data = self.client_soc.recv(2048)
-            self.data = self.data.decode('utf-8')
+            self.menu=" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "
+            self.send_msg(self.client_soc,self.menu)
+            self.data = self.receive_msg(self.client_soc)
             print("data =",self.data)
             if self.data == "1":
                 self.by_what="by_artist"
@@ -152,8 +173,11 @@ class ServerSocket():
                 self.by_what="by_music"
                 self.recherche(self.by_what,self.client_soc)
             else:
-                self.client_soc.send(str.encode("Erreur dans le choix"))
+                self.msg="Erreur dans le choix"
+                self.client_soc.send(self.client_soc,self.msg)
                 return(False)
+        # elif self.data == "2":
+            # playlist=True
         else:
             pass
 
@@ -216,7 +240,7 @@ class Spotifriend():
         '''
 # Main
 host="127.0.0.1"
-port=9883
+port=9869
 server=ServerSocket(host,port)
 server.run()
 

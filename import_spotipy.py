@@ -3,10 +3,14 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas
 import time 
 import re 
+#Import pour la partie sql
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 import mariadb
+#Import pour méthadonnée des fichiers mp3
+import eyed3
+import os, glob, eyed3
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
 #pandas : permet la création d'un dataframe et son importation en csv pour importation dans MariaDB
 #time permet d'importer la fonction sleep. re permet d'utiliser des expression régulières
@@ -120,6 +124,8 @@ def getTrackData(id_track):
 
 
 
+
+
 #Fonction prenant en paramètre le nom d'un artiste et générant un .csv contenant l'ensemble des titres et caractéristiques associées de l'artiste
 def getDiscography(artist_name):
     discography=[]
@@ -127,23 +133,33 @@ def getDiscography(artist_name):
     artist=getArtist(artist_name)
     albums=getArtistAlbums(artist)
     
+    os.chdir("/home/arthur/Musique/") #Chemin où se trouve la musique
+    online="" 
     for album in albums:
         tracks=getAlbumTracks(album)
         for id_track in tracks:
-            track_data=getTrackData(id_track)
+            track_data=getTrackData(id_track) 
+            
+            for file in glob.glob("*.mp3"): #Boucle pour vérifier la disponibilité de la musique dans le dossier
+                eyed3.log.setLevel("ERROR")
+                audiofile = eyed3.load(file)          
+                if audiofile.tag.artist.casefold() == track_data[3].casefold() and audiofile.tag.title.casefold() == track_data[1].casefold():
+                    online = "Dispo"
+                else:
+                    online = "non-dispo"
+            track_data.append(online)            
+
             if track_data[1] not in track_names:
                 track_names.append(track_data[1])
                 discography.append(track_data)
+    print ("#####################",track_data)
 
-    df = pandas.DataFrame(discography, columns = ['id','name', 'album', 'artist', 'release_date', 'length', 'popularity']) #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
-    #df.to_csv("/home/camille/Documents/spotify.csv", sep = ',')
-    
-    # engine = create_engine("mariadb+mariadbconnector://root@localhost:3306/spotifree")
-    engine = create_engine("mariadb+mariadbconnector://camille@localhost:3306/spotifree")
+    df = pandas.DataFrame(discography, columns = ['id','title', 'album', 'artist', 'release_date', 'length', 'popularity', 'dispo']) 
+    #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
+    engine = create_engine("mariadb+mariadbconnector://thurux:thurux@localhost:3306/spotifree")
     df.to_sql('listing', engine, if_exists='append', index = False)
-    #df.to_sql(name='listing', con=conn, if_exists='append', index=False)
+    
 
 
-query=input("Quel Artiste : ")
-getDiscography(query)
-#print(artist_data['artists']['items'][0]['external_urls']['spotify'])
+# query=input("Quel Artiste : ")
+# getDiscography(query)
