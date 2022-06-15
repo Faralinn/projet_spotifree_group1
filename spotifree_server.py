@@ -39,14 +39,13 @@ class gestion_SQL():
         self.query=f"INSERT INTO {self.table} ({self.colonnes}) VALUES {self.data}"
         self.cur.execute(query)
     
-    def search (self,condition,table):
+    def search (self,condition,colonnes):
         '''
         Fonction qui permet de chercher un element dans la base de donnee
         '''
-        self.condition=condition
-        self.table=table
-        self.query=f"SELECT * FROM {table} WHERE {condition};"
-        print("DANS SEARCH",self.query)
+        self.colonnes=colonnes
+        self.condition=self.colonnes+"LIKE %"+condition+"%"
+        self.query=f"SELECT {self.colonnes} FROM listing WHERE {self.condition};"
         self.cur.execute(self.query)
         self.results=self.cur.fetchall()
         for line in self.results:
@@ -80,49 +79,58 @@ class ServerSocket():
         self.PORT=port
         self.clients=[]
         self.ThreadCount = 0
-
         self.soc.bind((self.HOST, self.PORT))
-
         # on met le server en écoute, pour l'instant limite conventionnelle de 5 requêtes à la fois
         print("Server listening...")
         self.soc.listen(5)
+
     def recherche(self,by_what,client_soc):
+        '''
+        Fonction qui demande au client via socket le nom de l'artiste, album ou musique pour executer la requete sql
+        et renvoyer le resultat de cette requete au client via socket
+        '''
         self.by_what=by_what
         self.client_soc=client_soc
         if self.by_what == "by_artist":
-            self.table="artiste"
+            self.colonnes="artist"
             self.client_soc.send(str.encode("Entrez le nom de l'artiste : "))
             self.data = self.client_soc.recv(2048)
             self.condition = self.data.decode('utf-8')
             print("data/condition =",self.data)
             sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.table))
+            self.reply= str(sql.search(self.condition,self.colonnes))
             self.client_soc.sendall(str.encode(self.reply))
-            # check_download()
+            self.menu_trouve()
         elif self.by_what == "by_album":
-            self.table="album"
+            self.colonnes="album"
             self.client_soc.send(str.encode("Entrez le nom de l'album : "))
             self.data = self.client_soc.recv(2048)
             self.condition = self.data.decode('utf-8')
             print("data/condition =",self.data)
             sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.table))
+            self.reply= str(sql.search(self.condition,self.colonnes))
             self.client_soc.sendall(str.encode(self.reply))
-            # check_download() 
+            self.menu_trouve()
         elif self.by_what == "by_music":
-            self.table="musique"
+            self.colonnes="title"
             self.client_soc.send(str.encode("Entrez le nom de la musique : "))
             self.data = self.client_soc.recv(2048)
             self.condition = self.data.decode('utf-8')
             print("data/condition =",self.data)
             sp.getDiscography(self.condition)
-            self.reply= str(sql.search(self.condition,self.table))
+            self.reply= str(sql.search(self.condition,self.colonnes))
             self.client_soc.sendall(str.encode(self.reply))
-            # check_download()
+            if reply != "":
+                self.menu_trouve()
         else:
-            pass
+            print("Erreur dans la fonction recherche")
+            return(False)
 
     def fonction_menu(self,client_soc):
+        '''
+        Fonction qui affiche un menu au client via socket, pour choisir les actions
+        que le client souhaite realiser
+        '''
         self.client_soc=client_soc
         self.client_soc.send(str.encode(" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "))
         self.data = self.client_soc.recv(2048)
@@ -163,7 +171,6 @@ class ServerSocket():
         '''
         Fonction qui accepte les connexions socket et attribue un fil (thread) a chaque utilisateur
         '''
-
         self.a=True
         while self.a==True:
             new_client, address=self.soc.accept()

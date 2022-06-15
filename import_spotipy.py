@@ -1,11 +1,15 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from os import getenv
-import pandas 
+import pandas
+import time 
 import re 
+import sqlalchemy
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+import mariadb
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
 #pandas : permet la création d'un dataframe et son importation en csv pour importation dans MariaDB
-# re permet d'utiliser des expression régulières
+#time permet d'importer la fonction sleep. re permet d'utiliser des expression régulières
 
 
 #bloc authentification à l'API spotify
@@ -116,8 +120,6 @@ def getTrackData(id_track):
 
 
 
-
-
 #Fonction prenant en paramètre le nom d'un artiste et générant un .csv contenant l'ensemble des titres et caractéristiques associées de l'artiste
 def getDiscography(artist_name):
     discography=[]
@@ -134,9 +136,14 @@ def getDiscography(artist_name):
                 discography.append(track_data)
 
     df = pandas.DataFrame(discography, columns = ['id','name', 'album', 'artist', 'release_date', 'length', 'popularity']) #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
-    path=getenv('HOME')+"/spotify.csv"
-    df.to_csv(path, sep = ',',index=False)
+    #df.to_csv("/home/camille/Documents/spotify.csv", sep = ',')
+    
+    # engine = create_engine("mariadb+mariadbconnector://root@localhost:3306/spotifree")
+    engine = create_engine("mariadb+mariadbconnector://camille@localhost:3306/spotifree")
+    df.to_sql('listing', engine, if_exists='append', index = False)
+    #df.to_sql(name='listing', con=conn, if_exists='append', index=False)
 
 
-# query=input("Quel Artiste : ")
-# getDiscography(query)
+query=input("Quel Artiste : ")
+getDiscography(query)
+#print(artist_data['artists']['items'][0]['external_urls']['spotify'])
