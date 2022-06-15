@@ -46,15 +46,15 @@ class gestion_SQL():
         self.table=table
         self.colonnes=colonnes
         self.condition=condition
-        self.query=f"SELECT {self.colonnes} FROM {self.table} WHERE {self.condition};"
+        self.query=f"SELECT DISTINCT {self.colonnes} FROM {self.table} WHERE {self.condition};"
         self.cur.execute(self.query)
         self.results=self.cur.fetchall()
+        # for line in self.results:
+        #     chain=""
+        #     for element in line:
+        #         chain+=str(element)+" | "
+        # return(chain)
         return(self.results)
-        for line in self.results:
-            chain=""
-            for element in line:
-                chain+=str(element)+" | "
-        return(chain)
     
     def delete (self,condition,table):
         '''
@@ -123,20 +123,22 @@ class ServerSocket():
             self.send_msg(self.client_soc,self.reply)
             # self.menu_trouve()
         elif self.by_what == "by_album":
-            self.colonnes="album"
+            self.colonnes="*"
             self.msg="Entrez le nom de l'album : "
             self.send_msg(self.client_soc, self.msg)
-            self.condition = self.receive_msg(self.client_soc)
-            sp.getDiscography(self.condition)
+            self.input = self.receive_msg(self.client_soc)
+            self.condition="album"+" LIKE \"%"+self.input+"%\""
+            sp.getDiscography(self.input)
             self.reply= str(sql.search(self.condition,self.colonnes,self.table))
             self.send_msg(self.client_soc,self.reply)
             # self.menu_trouve()
         elif self.by_what == "by_music":
-            self.colonnes="title"
+            self.colonnes="*"
             self.msg="Entrez le nom du titre : "
             self.send_msg(self.client_soc, self.msg)
-            self.condition = self.receive_msg(self.client_soc)
-            sp.getDiscography(self.condition)
+            self.input = self.receive_msg(self.client_soc)
+            self.condition="title"+" LIKE \"%"+self.input+"%\""
+            sp.getDiscography(self.input)
             self.reply= str(sql.search(self.condition,self.colonnes,self.table))
             self.send_msg(self.client_soc,self.reply)
             # if reply != "":
@@ -156,20 +158,18 @@ class ServerSocket():
         self.menu=" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "
         self.send_msg(self.client_soc,self.menu)
         self.data = self.receive_msg(self.client_soc)
-        print("data =",self.data)
         if self.data == "1":
             # recherche=True
             self.menu=" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "
             self.send_msg(self.client_soc,self.menu)
             self.data = self.receive_msg(self.client_soc)
-            print("data =",self.data)
             if self.data == "1":
                 self.by_what="by_artist"
                 self.recherche(self.by_what,self.client_soc)
-            elif data == "2":
+            elif self.data == "2":
                 self.by_what="by_album"
                 self.recherche(self.by_what,self.client_soc)
-            elif data == "3":
+            elif self.data == "3":
                 self.by_what="by_music"
                 self.recherche(self.by_what,self.client_soc)
             else:
@@ -240,7 +240,7 @@ class Spotifriend():
         '''
 # Main
 host="127.0.0.1"
-port=9869
+port=9868
 server=ServerSocket(host,port)
 server.run()
 
