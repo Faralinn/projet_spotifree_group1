@@ -1,0 +1,56 @@
+
+login_function
+menu_function
+
+
+(I) login :
+    login_function (connexion ou création compte)
+        - connexion :
+            input id
+
+            while !check_id :
+                print(le compte {id} n'existe pas ! etes vous sur d'avoir un compte ?)
+                connexion_function
+            
+            while !check_pwd :
+                input pwd
+
+            print(connecté !)
+
+        -création :
+            while check_id :
+                input id
+
+            input pwd
+            connexion_function
+
+
+
+(II) menu :
+    -Chercher une musique :
+        demander artiste 
+        -> fonction get_discography : charger .csv
+        -> demander titre (options random et list ?)
+            musique trouvée :   
+                - ecouter
+                - ajouter à une Playlist
+            musique non trouvée : 
+                retour menu
+    
+    -Playlists
+        lister Playlist -> "que voulez-vous faire ?"
+            -selectionner playlist
+                -modifier
+                -écouter
+                -partager
+                -supprimer
+            -créer
+            -retour menu
+    
+    -spotifriends
+        lister amis -> "que voulez-vous faire ?"
+            -selectionner ami
+                -supprimer ami
+                -envoyer message amis
+            -ajouter ami
+            -retour menu
