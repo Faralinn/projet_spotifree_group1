@@ -3,9 +3,10 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas
 import time 
 import re 
-# import sqlalchemy
-# from sqlalchemy import create_engine
-# import mariadb
+import sqlalchemy
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+import mariadb
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
 #pandas : permet la création d'un dataframe et son importation en csv pour importation dans MariaDB
 #time permet d'importer la fonction sleep. re permet d'utiliser des expression régulières
@@ -137,14 +138,16 @@ def getDiscography(artist_name):
                 discography.append(track_data)
 
     df = pandas.DataFrame(discography, columns = ['id','name', 'album', 'artist', 'release_date', 'length', 'popularity']) #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
-    df.to_csv("/home/camille/Documents/spotify.csv", sep = ',')
+    #df.to_csv("/home/camille/Documents/spotify.csv", sep = ',')
     
     # engine = create_engine("mariadb+mariadbconnector://root@localhost:3306/spotifree")
-    # df.to_sql("listing", con=engine, if_exists='append', index=False)
+    engine = create_engine("mariadb+mariadbconnector://camille@localhost:3306/spotifree")
+    df.to_sql('listing', engine, if_exists='append', index = False)
+    #df.to_sql(name='listing', con=conn, if_exists='append', index=False)
 
 
 query=input("Quel Artiste : ")
 getDiscography(query)
-print(artist_data['artists']['items'][0]['external_urls']['spotify'])
+#print(artist_data['artists']['items'][0]['external_urls']['spotify'])
 
 
