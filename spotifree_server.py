@@ -55,6 +55,7 @@ class gestion_SQL():
         print(self.results)
         chain=""
         for line in self.results:
+            chain+="\n"
             for element in line:
                 chain+=str(element)+" | "
         return(chain)
@@ -69,10 +70,10 @@ class gestion_SQL():
         self.query=f"DELETE FROM {table} WHERE {condition};"
         self.cur.execute(self.query)
 
-
 sql=gestion_SQL()
 ###
 class ServerSocket():
+# Fonctions de base du socket
     def __init__(self,host,port):
         '''
         Fonction d'initialisation du socket server
@@ -108,8 +109,7 @@ class ServerSocket():
         self.data = self.data.decode('utf-8')
         return(self.data)
 
-    
-    #fonction vérifiant si le pseudo existe déjà ans la base de donnée
+# Login
     def check_username(self,username) :
         self.username=username
         self.colonnes="pseudo"
@@ -123,13 +123,13 @@ class ServerSocket():
             check=True
         return check
         #fonction vérifiant si le mot de passe donné est correct
+
     def check_passwd(self,username,passwd) :
-        
         self.username=username
         self.colonnes="mot_de_pass"
         self.table="identifiants"
         self.condition="pseudo LIKE \""+self.username+"\""
-        self.passwd=passwd+" | "
+        self.passwd="\n"+passwd+" | "
         self.password=sql.search(self.condition,self.colonnes,self.table)
         print("  passwd : ",self.passwd)
         print("password : ",self.password)
@@ -138,9 +138,11 @@ class ServerSocket():
             check=True
         return check
 
-    #fonction régissant la connexion de l'utilisateur. Cette fonction est appelée par la fonction login.
-    #Si la connexion est réussie, lancement de la fonction principale du script.
     def connexion(self,client_soc):
+        '''
+        Fonction regissant la connexion de l'utilisateur. Cette fonction est appelee par la fonction login.
+        Si la connexion est reussie, lancement de la fonction principale du script.
+        '''
         self.client_soc=client_soc
         self.next_step=""
         self.send_msg(self.client_soc,"Nom d'utilisateur : ")
@@ -230,8 +232,6 @@ class ServerSocket():
             self.data=f"(\'{self.username}\',\'{self.passwd}\')"
             sql.insertion(self.table,self.colonnes,self.data)
 
-
-
     def login(self,client_soc) :
         self.client_soc=client_soc
         self.next_step="menu"
@@ -250,19 +250,21 @@ class ServerSocket():
                     self.send_msg(self.client_soc,"Option non reconnue.\n")
         if self.next_step == "spotiFREE":
             while True:
-                self.fonction_menu(self.client_soc)
+                self.fonction_menu(self.client_soc,self.username)
         self.send_msg(self.client_soc,"Merci d'avoir utilisé spotiFREE !")
 
-
-    def recherche(self,by_what,client_soc):
+# Gestion database
+    def recherche_spotipy(self,client_soc):
         '''
         Fonction qui demande au client via socket le nom de l'artiste, album ou musique pour executer la requete sql
         et renvoyer le resultat de cette requete au client via socket
         '''
-        self.by_what=by_what
         self.client_soc=client_soc
         self.table="listing"
-        if self.by_what == "by_artist":
+        self.menu=" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n 4/ RETOUR\n"
+        self.send_msg(self.client_soc,self.menu)
+        self.data = self.receive_msg(self.client_soc)
+        if self.data == "1":
             self.colonnes="*"
             self.msg="Entrez le nom de l'artiste : "
             self.send_msg(self.client_soc, self.msg)
@@ -272,8 +274,7 @@ class ServerSocket():
             self.reply= str(sql.search(self.condition,self.colonnes,self.table))
             print(self.reply)
             self.send_msg(self.client_soc,self.reply)
-            # self.menu_trouve()
-        elif self.by_what == "by_album":
+        elif self.data == "2":
             self.colonnes="*"
             self.msg="Entrez le nom de l'album : "
             self.send_msg(self.client_soc, self.msg)
@@ -282,8 +283,7 @@ class ServerSocket():
             sp.getDiscography(self.input)
             self.reply= str(sql.search(self.condition,self.colonnes,self.table))
             self.send_msg(self.client_soc,self.reply)
-            # self.menu_trouve()
-        elif self.by_what == "by_music":
+        elif self.data == "3":
             self.colonnes="*"
             self.msg="Entrez le nom du titre : "
             self.send_msg(self.client_soc, self.msg)
@@ -292,54 +292,80 @@ class ServerSocket():
             sp.getDiscography(self.input)
             self.reply= str(sql.search(self.condition,self.colonnes,self.table))
             self.send_msg(self.client_soc,self.reply)
-            # if reply != "":
-            #     self.menu_trouve()
+        elif self.data == "4":
+            fonction_menu(self.client_soc)
         else:
-            self.msg="Erreur dans la fonction recherche"
-            print(msg)
-            self.send_msg(msg)
+            self.msg="Erreur dans le choix"
+            self.client_soc.send(self.client_soc,self.msg)
             return(False)
 
-    def fonction_menu(self,client_soc):
+    def afficher_playlist(self,client_soc,username):
+        self.client_soc=client_soc
+        self.username=username
+        self.menu="De quelle playlist voulez-vous afficher les titres ?\n"
+        self.send_msg(self.client_soc,self.menu)
+        self.data = self.receive_msg(self.client_soc)
+        self.condition="pseudo"+" LIKE \"%"+self.username+"%\""+"AND titre_playlist LIKE \"%"+self.data+"%\""
+        self.colonnes="artist,musique"
+        self.table="playlist"
+        self.reply="Voici les titres de"+self.data+"\n"+str(sql.search(self.condition,self.colonnes,self.table))+"\n"
+        self.send_msg(self.client_soc,self.reply)
+
+    def partager_playlist(self,client_soc,username):
+        self.client_soc=client_soc
+        self.username=username
+        self.menu="Quelle playlist voulez-vous partager ?\n"
+        self.send_msg(self.client_soc,self.menu)
+        self.playlist_to_share = self.receive_msg(self.client_soc)
+        self.menu="Avec quel.le ami.e voulez-vous partager "+self.playlist_to_share+" ?\n"
+        self.send_msg(self.client_soc,self.menu)
+        self.friend_to_share_with = self.receive_msg(self.client_soc)
+        self.colonnes="pseudo,"
+        self.table="playlists"
+        self.data=f"(\'{self.friend_to_share_with}\',\'{self.passwd}\')"
+        sql.insertion(self.table,self.colonnes,self.data)
+
+    def gestion_playlist(self,client_soc,username):
+        self.condition="pseudo"+" LIKE \"%"+self.username+"%\""
+        self.colonnes="titre_playlist"
+        self.table="playlist"
+        self.reply="#### LISTE DES PLAYLISTS ####\n"+str(sql.search(self.condition,self.colonnes,self.table))+"\n"
+        self.send_msg(self.client_soc,self.reply)
+        self.menu="\n 1/ AFFICHER LES TITRES\n 2/ PARTAGER AVEC UN.E AMI.E\n 3/ CREER NOUVELLE PLAYLIST\n 4/ SUPPRIMER UNE PLAYLIST\n 5/ RETOUR\n"
+        self.send_msg(self.client_soc,self.menu)
+        self.data = self.receive_msg(self.client_soc)
+        if self.data == "1":
+            self.afficher_playlist(self.client_soc,self.username)
+        elif self.data == "2":
+            self.partager_playlist(self.client_soc,self.username)
+        elif self.data == "3":
+            pass
+        elif self.data == "4":
+            pass
+        elif self.data == "5":
+            fonction_menu(self.client_soc)
+        else:
+            self.msg="Erreur dans le choix"
+            self.client_soc.send(self.client_soc,self.msg)
+            return(False)
+
+    def fonction_menu(self,client_soc,username):
         '''
         Fonction qui affiche un menu au client via socket, pour choisir les actions
         que le client souhaite realiser
         TO DO => envoyer le pseudo en parametre de la fonction menu
         pour le moment pseudo arbitraire = arthur
         '''
+        self.username=username
         self.client_soc=client_soc
         self.menu=" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "
         self.send_msg(self.client_soc,self.menu)
         self.data = self.receive_msg(self.client_soc)
-        if self.data == "1":
-            # recherche=True
-            self.menu=" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "
-            self.send_msg(self.client_soc,self.menu)
-            self.data = self.receive_msg(self.client_soc)
-            if self.data == "1":
-                self.by_what="by_artist"
-                self.recherche(self.by_what,self.client_soc)
-            elif self.data == "2":
-                self.by_what="by_album"
-                self.recherche(self.by_what,self.client_soc)
-            elif self.data == "3":
-                self.by_what="by_music"
-                self.recherche(self.by_what,self.client_soc)
-            else:
-                self.msg="Erreur dans le choix"
-                self.client_soc.send(self.client_soc,self.msg)
-                return(False)
-        elif self.data == "2":
-            # playlist=True
-            self.condition="pseudo"+" LIKE \"%"+"arthur"+"%\""
-            self.colonnes="titre_playlist"
-            self.table="playlist"
-            self.reply= str(sql.search(self.condition,self.colonnes,self.table))
-            self.send_msg(self.client_soc,self.reply)
-            self.menu=" PLAYLIST :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n "
-            self.send_msg(self.client_soc,self.menu)
-            self.data = self.receive_msg(self.client_soc)
 
+        if self.data == "1":
+            self.recherche_spotipy(self.client_soc)
+        elif self.data == "2":
+            self.gestion_playlist(self.client_soc,self.username)
         else:
             pass
 

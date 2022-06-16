@@ -17,15 +17,19 @@ CREATE TABLE identifiants (
 
 
 /* création table playlist */
+CREATE TABLE playlists (
+    titre_playlist VARCHAR(30) PRIMARY KEY,
+    utilisateurs TEXT,
+    droits TEXT
+);
 
-CREATE TABLE playlist (
-    pseudo VARCHAR(30),
-    titre_playlist TEXT,
+/* création d'une table pour chaque playlist, ici playlist test */
+CREATE TABLE playlist_test (
+    titre_playlist VARCHAR(30) PRIMARY KEY,
     artist TEXT,
     musique TEXT,
-    FOREIGN KEY (pseudo) REFERENCES identifiants (pseudo)
+    FOREIGN KEY (titre_playlist) REFERENCES playlists (titre_playlist)
 ) ENGINE = InnoDB;
-
 
 /* création table liste amis */
 
@@ -35,13 +39,21 @@ CREATE TABLE spotifriends (
     FOREIGN KEY (pseudo) REFERENCES identifiants (pseudo)
 ) ENGINE = InnoDB;
 
+INSERT INTO playlists VALUES (
+    "playlist_test",
+    "arthur",
+    "privée"
+);
 
-
-
+INSERT INTO playlist_test VALUES (
+    "playlist_test",
+    "jack white",
+    "entitlement"
+);
 
 INSERT INTO identifiants VALUES (
     "cannelle",
-    "root"
+    "secret"
 );
 
 INSERT INTO identifiants VALUES (

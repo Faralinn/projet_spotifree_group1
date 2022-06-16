@@ -1,3 +1,4 @@
+import spotdl
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import pandas
@@ -10,7 +11,11 @@ from sqlalchemy import create_engine
 import mariadb
 #Import pour méthadonnée des fichiers mp3
 import eyed3
-import os, glob, eyed3
+import os
+import glob
+import eyed3
+#Import pour téléchargement des ziks
+
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
 #pandas : permet la création d'un dataframe et son importation en csv pour importation dans MariaDB
 #time permet d'importer la fonction sleep. re permet d'utiliser des expression régulières
@@ -153,13 +158,16 @@ def getDiscography(artist_name):
                 track_names.append(track_data[1])
                 discography.append(track_data)
     print ("#####################",track_data)
+    os.system('spotdl https://open.spotify.com/track/'+track_data[0])
 
     df = pandas.DataFrame(discography, columns = ['id','title', 'album', 'artist', 'release_date', 'length', 'popularity', 'dispo']) 
     #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])
     engine = create_engine("mariadb+mariadbconnector://thurux:thurux@localhost:3306/spotifree")
     df.to_sql('listing', engine, if_exists='append', index = False)
     
+# os.system('spotdl https://open.spotify.com/track/'+track_data[0])
 
 
 # query=input("Quel Artiste : ")
 # getDiscography(query)
+
