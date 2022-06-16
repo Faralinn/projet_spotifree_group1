@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+      #serveur de base de donnees
+    database:
+        image: mariadb
+        container_name: spoti_db
+        restart: always
+        environment:
+           - MARIADB_USER=spoti
+           - MARIADB_PASSWORD=spotipass
+           - MARIADB_DATABASE=spotifree
+           - MARIADB_ROOT_PASSWORD=spotipass
+        volumes:
+           - ${PWD}/db_data:/var/lib/mysql
+        
+    vsftpd:
+        image: fauria/vsftpd
+        container_name: spoti_ftp
+        restart: always
+        environment:
+           - FTP_USER=spoti
+           - FTP_PASS=spotipass
+        ports:
+           - 21:21
+        volumes:
+           - /home/camille/Musique:/home/vsftpd
+
+
