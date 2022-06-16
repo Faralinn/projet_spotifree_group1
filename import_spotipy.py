@@ -13,7 +13,6 @@ import mariadb
 import eyed3
 import os
 import glob
-import eyed3
 #Import pour téléchargement des ziks
 
 #spotipy : permet d'effectuer des recherches dans l'API Spotify via python
@@ -140,10 +139,14 @@ def getDiscography(artist_name):
     
     os.chdir("/home/arthur/Musique/") #Chemin où se trouve la musique
     online="" 
+    url=[]
     for album in albums:
         tracks=getAlbumTracks(album)
         for id_track in tracks:
-            track_data=getTrackData(id_track) 
+            track_data=getTrackData(id_track)
+            url.append(track_data[0])
+            track_data[0]=""
+            
             
             for file in glob.glob("*.mp3"): #Boucle pour vérifier la disponibilité de la musique dans le dossier
                 eyed3.log.setLevel("ERROR")
@@ -158,7 +161,7 @@ def getDiscography(artist_name):
                 track_names.append(track_data[1])
                 discography.append(track_data)
     print ("#####################",track_data)
-    os.system('spotdl https://open.spotify.com/track/'+track_data[0])
+    # pour DL => os.system('spotdl https://open.spotify.com/track/'+url)
 
     df = pandas.DataFrame(discography, columns = ['id','title', 'album', 'artist', 'release_date', 'length', 'popularity', 'dispo']) 
     #, 'danceability', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'tempo', 'time_signature'])

@@ -48,6 +48,7 @@ class gestion_SQL():
         self.table=table
         self.colonnes=colonnes
         self.condition=condition
+        print(self.condition)
         self.query=f"SELECT DISTINCT {self.colonnes} FROM {self.table} WHERE {self.condition};"
         print(self.query)
         self.cur.execute(self.query)
@@ -60,6 +61,7 @@ class gestion_SQL():
                 chain+=str(element)+" | "
         return(chain)
         # return(self.results)
+    # def update (): 
     
     def delete (self,condition,table):
         '''
@@ -69,6 +71,7 @@ class gestion_SQL():
         self.table=table
         self.query=f"DELETE FROM {table} WHERE {condition};"
         self.cur.execute(self.query)
+        
 
 sql=gestion_SQL()
 ###
@@ -305,10 +308,11 @@ class ServerSocket():
         self.menu="De quelle playlist voulez-vous afficher les titres ?\n"
         self.send_msg(self.client_soc,self.menu)
         self.data = self.receive_msg(self.client_soc)
-        self.condition="pseudo"+" LIKE \"%"+self.username+"%\""+"AND titre_playlist LIKE \"%"+self.data+"%\""
+        self.condition="titre_playlist LIKE \"%"+self.data+"%\""
+        print("dans afficher_playlist ", self.condition)
         self.colonnes="artist,musique"
-        self.table="playlist"
-        self.reply="Voici les titres de"+self.data+"\n"+str(sql.search(self.condition,self.colonnes,self.table))+"\n"
+        self.table=self.data
+        self.reply="Voici les titres de "+self.data+": \n"+str(sql.search(self.condition,self.colonnes,self.table))+"\n\n"
         self.send_msg(self.client_soc,self.reply)
 
     def partager_playlist(self,client_soc,username):
@@ -320,15 +324,25 @@ class ServerSocket():
         self.menu="Avec quel.le ami.e voulez-vous partager "+self.playlist_to_share+" ?\n"
         self.send_msg(self.client_soc,self.menu)
         self.friend_to_share_with = self.receive_msg(self.client_soc)
-        self.colonnes="pseudo,"
+        self.colonnes="utilisateurs"
         self.table="playlists"
         self.data=f"(\'{self.friend_to_share_with}\',\'{self.passwd}\')"
-        sql.insertion(self.table,self.colonnes,self.data)
+        #sql.insertion(self.table,self.colonnes,self.data)
 
+    def creation_playlist(self,client_soc,username):
+        self.client_soc=client_soc
+        self.username=username
+        self.msg="Choisissez un nom pour la playlist : "
+        self.send_msg(self.client_soc,self.msg)
+        self.playlist_name=self.receive_msg(self.client_soc)
+        query=f"CREATE TABLE {self.playlist_name} (titre_playlist VARCHAR(30) PRIMARY KEY,artist TEXT,musique TEXT,FOREIGN KEY (titre_playlist) REFERENCES playlists (titre_playlist)) ENGINE = InnoDB;"
+        sql.cur.execute(query)
+        
     def gestion_playlist(self,client_soc,username):
-        self.condition="pseudo"+" LIKE \"%"+self.username+"%\""
+        self.username=username
+        self.condition="utilisateurs"+" LIKE \"%"+self.username+"%\""
         self.colonnes="titre_playlist"
-        self.table="playlist"
+        self.table="playlists"
         self.reply="#### LISTE DES PLAYLISTS ####\n"+str(sql.search(self.condition,self.colonnes,self.table))+"\n"
         self.send_msg(self.client_soc,self.reply)
         self.menu="\n 1/ AFFICHER LES TITRES\n 2/ PARTAGER AVEC UN.E AMI.E\n 3/ CREER NOUVELLE PLAYLIST\n 4/ SUPPRIMER UNE PLAYLIST\n 5/ RETOUR\n"
@@ -339,7 +353,7 @@ class ServerSocket():
         elif self.data == "2":
             self.partager_playlist(self.client_soc,self.username)
         elif self.data == "3":
-            pass
+            self.creation_playlist(self.client_soc,self.username)
         elif self.data == "4":
             pass
         elif self.data == "5":
@@ -349,6 +363,82 @@ class ServerSocket():
             self.client_soc.send(self.client_soc,self.msg)
             return(False)
 
+    def add_friends(self,client_soc,username,friends) :
+        self.client_soc=client_soc
+        self.user=username
+        self.friends=friends
+        
+        self.menu="Veuillez entrer le nom d'un ami : "
+        self.send_msg(self.client_soc,self.menu)
+        self.friendname = self.receive_msg(self.client_soc)
+        print("ici la data pour l'insertion : "+f"(\'{self.user}\',\'{self.friendname}\')")
+        if not self.check_username(self.friendname) :
+            self.send_msg(self.client_soc,"Cet utilisateur n'existe pas !\n")
+        elif self.friendname in self.friends :
+            self.msg="Vous êtes déjà amis avec "+self.friendname+" !\n"
+            self.send_msg(self.client_soc,self.msg)
+        else :
+            self.data=f"(\'{self.user}\',\'{self.friendname}\')"
+            print("ici la data pour l'insertion : "+f"(\'{self.user}\',\'{self.friendname}\')")
+            sql.insertion("spotifriends","pseudo,amis",self.data)
+            self.msg=self.friendname+" ajouté à la liste d'ami !\n"
+            self.send_msg(self.client_soc,self.msg)
+
+    def delete_friends(self,client_soc,username,friends) :
+        self.client_soc=client_soc
+        self.username=username
+        self.friends=friends
+        
+        self.menu="Veuillez entrer le nom d'un ami : "
+        self.send_msg(self.client_soc,self.menu)
+        self.friendname = self.receive_msg(self.client_soc)
+
+        if not self.friendname in self.friends :
+            self.msg="Cet utilisateur n'est pas dans votre liste d'ami.\n"
+            self.send_msg(self.client_soc,self.msg)
+        else :
+            self.data=f"pseudo LIKE \'{self.username}\' and amis LIKE \'{self.friendname}\'"
+            sql.delete("spotifriends",self.data)
+            self.msg=self.friendname+" supprimé de la liste d'ami.\n"
+            self.send_msg(self.client_soc,self.msg)
+
+    def list_friends(self,username) :
+        self.username=username
+        self.table="spotifriends"
+        self.colonnes="amis"
+        self.condition="pseudo LIKE \""+self.username+"\""
+        self.friends=sql.search(self.condition,self.colonnes,self.table)
+        print("result ici : ",self.friends)
+        return(self.friends)
+
+    def spotifriends(self,client_soc,username):
+        self.client_soc=client_soc
+        self.username=username
+        self.friends=self.list_friends(self.username)
+        if self.friends == '' :
+            self.msg="Ajoutez des amis pour partager vos playlists !\n"
+            self.send_msg(self.client_soc,self.msg)
+        else :
+            self.msg="Liste de vos amis : "+self.friends
+            self.send_msg(self.client_soc,self.msg)
+
+        self.exit="0"
+        while self.exit == "0":
+
+            self.menu="1/ Ajouter un ami\n2/ Supprimer un ami\n3/ Retour Menu\n"
+            self.send_msg(self.client_soc,self.menu)
+            self.choix = self.receive_msg(self.client_soc)
+
+            if self.choix == "1":
+                self.add_friends(self.client_soc,self.username,self.friends)
+            elif self.choix == "2":
+                self.delete_friends(self.client_soc,self.username,self.friends)
+            elif self.choix == "3":
+                self.exit= "1"
+            else :
+                pass
+            
+##########################
     def fonction_menu(self,client_soc,username):
         '''
         Fonction qui affiche un menu au client via socket, pour choisir les actions
@@ -366,9 +456,13 @@ class ServerSocket():
             self.recherche_spotipy(self.client_soc)
         elif self.data == "2":
             self.gestion_playlist(self.client_soc,self.username)
+        elif self.data == "3":
+            self.spotifriends(self.client_soc,self.username)
         else:
             pass
+##########################
 
+# Fonctions de connection et de lancement, génération des threads
     def FONCTION_THREAD(self, client_soc):
         '''
         Ce qui se passe sur chaque thread pour chaque client => equivalent de notre main !!
@@ -400,36 +494,6 @@ class ServerSocket():
 
     def run(self) :
         self.accept_connection()
-
-###
-class Spotifriend():
-    '''
-    Classe qui va nous permettre de manipuler et créer les objets "Spotifriend", à partir du server sql
-    => création d'identifiant/mdp
-    => possib d'ajout d'ami
-    => possib de supprimer un ami
-    => voir liste d'amis
-    => droits de read sur les playlists
-    '''
-    def __init__(self,id,mdp):
-        '''
-        Fonction d'initialisation pour la classe Spotifriend
-        '''
-        self.id=id
-        self.mdp=mdp
-
-    def creation_id():
-        '''
-        Fonction pour créer les id et mdp lors d'une première connexion : ajout à la table dédiée
-        '''
-    def check_id():
-        '''
-        Fonction pour comparer les inputs id/mdp avec le fichier json
-        '''
-    def ajout_ami():
-        '''
-        Fonction
-        '''
 # Main
 host="127.0.0.1"
 port=9868

@@ -36,8 +36,7 @@ CREATE TABLE playlist_test (
 CREATE TABLE spotifriends (
     pseudo VARCHAR(30) PRIMARY KEY,
     amis TEXT,
-    FOREIGN KEY (pseudo) REFERENCES identifiants (pseudo)
-) ENGINE = InnoDB;
+);
 
 INSERT INTO playlists VALUES (
     "playlist_test",
