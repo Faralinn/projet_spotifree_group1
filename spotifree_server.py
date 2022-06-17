@@ -21,8 +21,8 @@ class gestion_SQL():
         Constructeur. Initialise la connexion avec la database et le curseur
         '''
         self.conn = mariadb.connect(
-            user="soufian",
-            password="soufian",
+            user="spoti",
+            password="spotipass",
             host="127.0.0.1",
             port=3306,
             database="spotifree",
