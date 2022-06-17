@@ -21,8 +21,8 @@ class gestion_SQL():
         Constructeur. Initialise la connexion avec la database et le curseur
         '''
         self.conn = mariadb.connect(
-            user="thurux",
-            password="thurux",
+            user="soufian",
+            password="soufian",
             host="127.0.0.1",
             port=3306,
             database="spotifree",
@@ -48,12 +48,9 @@ class gestion_SQL():
         self.table=table
         self.colonnes=colonnes
         self.condition=condition
-        print(self.condition)
         self.query=f"SELECT DISTINCT {self.colonnes} FROM {self.table} WHERE {self.condition};"
-        print(self.query)
         self.cur.execute(self.query)
         self.results=self.cur.fetchall()
-        print(self.results)
         chain=""
         for line in self.results:
             chain+="\n"
@@ -72,11 +69,16 @@ class gestion_SQL():
         self.query=f"DELETE FROM {table} WHERE {condition};"
         self.cur.execute(self.query)
         
-
+#création d'une instance de la classe gestion_SQL pour interragir avec la base de données
 sql=gestion_SQL()
 ###
-class ServerSocket():
-# Fonctions de base du socket
+
+class ServerSocket():  
+    '''
+    Classe dedié"e pour la création et l'utilisation des sockets dans les différentes fonctions du programme.
+    Ces fonctions sont codés en tant que méthode de cette classe.
+    '''
+    # Fonctions de base du socket
     def __init__(self,host,port):
         '''
         Fonction d'initialisation du socket server
@@ -112,30 +114,32 @@ class ServerSocket():
         self.data = self.data.decode('utf-8')
         return(self.data)
 
-# Login
+    # Blocs de fonctions gérant la création et l'identification des utilisateurs
+
     def check_username(self,username) :
+        '''
+        Fonction vérifiant l'existence d'un utilisateur
+        '''
         self.username=username
         self.colonnes="pseudo"
         self.table="identifiants"
         self.condition=self.colonnes+" LIKE \""+self.username+"\""
-        print(self.condition)
         self.usernames=sql.search(self.condition,self.colonnes,self.table)
-        #self.query=f"SELECT DISTINCT {self.colonnes} FROM {self.table} WHERE {self.condition};"
         check=False
         if self.username in self.usernames :
             check=True
         return check
-        #fonction vérifiant si le mot de passe donné est correct
 
     def check_passwd(self,username,passwd) :
+        '''
+        Fonction vérifiant si le mot de passe entré pour un utilisateur donné est correct
+        '''
         self.username=username
         self.colonnes="mot_de_pass"
         self.table="identifiants"
         self.condition="pseudo LIKE \""+self.username+"\""
         self.passwd="\n"+passwd+" | "
         self.password=sql.search(self.condition,self.colonnes,self.table)
-        print("  passwd : ",self.passwd)
-        print("password : ",self.password)
         check=False
         if self.passwd == self.password :
             check=True
@@ -143,15 +147,17 @@ class ServerSocket():
 
     def connexion(self,client_soc):
         '''
-        Fonction regissant la connexion de l'utilisateur. Cette fonction est appelee par la fonction login.
-        Si la connexion est reussie, lancement de la fonction principale du script.
+        Fonction regissant la connexion de l'utilisateur. Cette fonction est appelée par la fonction login.
+        Si la connexion est réussie, lancement de la fonction principale du script.
         '''
         self.client_soc=client_soc
         self.next_step=""
         self.send_msg(self.client_soc,"Nom d'utilisateur : ")
         self.username = self.receive_msg(self.client_soc)
+        #on vérifie si l'utilisateur existe
         self.check=self.check_username(self.username)
         if not self.check :
+             #s'il n'existe pas, on propose à l'utilisateur de réessayer ou de retourner au menu du login
             self.msg="Le compte "+self.username+" n'existe pas ! Etes vous sur d'avoir un compte ?\n1- Réessayer\n2- Retour au menu principal\nChoisissez une option : "
             self.send_msg(self.client_soc,self.msg)
             self.sign_in = self.receive_msg(self.client_soc)
@@ -163,10 +169,12 @@ class ServerSocket():
                 self.send_msg(self.client_soc,"Option non reconnue. Retour au menu principal.")
                 self.next_step="menu"
         else :
+            #si l'utilisateur existe, on demande le mot de passe et on le teste.
             self.send_msg(self.client_soc,"Mot de passe : ")
             self.passwd = self.receive_msg(self.client_soc)
             self.check=self.check_passwd(self.username, self.passwd)
             self.tries=1
+            #si le mot de passe est faux, on le redemande jusqu'à 5 fois puis on arrête la connexion.
             while not self.check and self.tries<5 and self.next_step != "menu":
                 self.msg="Mot de passe incorrect !\n--------------------------------------------------\n1- Réessayer\n2- Retour au menu principal\nChoisissez une option : "
                 self.send_msg(self.client_soc,self.msg)
@@ -181,7 +189,7 @@ class ServerSocket():
                 else : 
                     self.send_msg(self.client_soc,"Option non reconnue.\n")
                     
-            
+            #si le mot de passe est bon, on affiche de message d'accueil et le menu principal.
             if self.check :
                 self.msg="Connexion réussie. Bienvenue, "+self.username+" !\n"
                 self.send_msg(self.client_soc,self.msg)
@@ -192,15 +200,23 @@ class ServerSocket():
                 self.msg="Mot de passe incorrect. Nombre de tentatives autorisées dépassé. Déconnexion. \n"
                 self.send_msg(self.client_soc,self.msg)
                 self.next_step="exit"
+        #next_step permet de diriger le programme vers la prochaine étape en fonction du déroulement de la connexion 
+        # (menu login, exit ou spotifree pour accéder à l'application)
         return(self.next_step)
 
     def creation(self, client_soc):
+        '''
+        Fonction gérant la création des comptes utilisateur. Cette fonction est appelée par la fonction login.
+        Si la création est réussie, ajout du compte dans la BDD et redirection vers l'interface de connexion.
+        '''
         self.client_soc=client_soc
         self.sign_up=""
         self.next_step="menu"
         self.send_msg(self.client_soc,"Choisissez un nom d'utilisateur : ")
         self.username = self.receive_msg(self.client_soc)
+        #on vérifie si l'utilisateur n'est pas déjà dans la BDD
         self.check=self.check_username(self.username)
+        #sinon on redemande un nom d'utilisateur, en laissant l'option de retourner à l'interface de connexion
         while self.check :
             self.msg="Le compte "+self.username+" existe déjà.\n"
             self.send_msg(self.client_soc,self.msg)
@@ -211,10 +227,13 @@ class ServerSocket():
                 self.send_msg(self.client_soc,"Choisissez un nom d'utilisateur : ")
                 self.username = self.receive_msg(self.client_soc)
                 self.check=self.check_username(self.username)
+            #si l'utilisateur veut retourner à l'écran de connexion, on sort de la boucle.
             elif self.sign_up == "2" :
                 self.check=False
             else :
                 self.send_msg(self.client_soc,"Option non reconnue.\n")
+        #on entre dans cette boucle if si l'utilisateur a bien donné un nom valide
+        #on lui demande un mot de passe qu'il devra confirmer une seconde fois.
         if self.sign_up != "2" :
             self.send_msg(self.client_soc,"Veuillez choisir un mot de passe : ")
             self.passwd = self.receive_msg(self.client_soc)
@@ -228,17 +247,23 @@ class ServerSocket():
                 self.passwd2 = self.receive_msg(self.client_soc)
             self.msg="Le compte "+self.username+" a bien été créé.\n"
             self.send_msg(self.client_soc,self.msg)
-            #ici stocker le compte username,passwd
-            print(f"(\'{self.username}\',\'{self.passwd}\')")
+            #on stocke le compte (username,passwd) dans la BDD
             self.colonnes="pseudo, mot_de_pass"
             self.table="identifiants"
             self.data=f"(\'{self.username}\',\'{self.passwd}\')"
             sql.insertion(self.table,self.colonnes,self.data)
 
     def login(self,client_soc) :
+        '''
+        Fonction gérant le processus d'identification. Cette fonction appelle les fonctions décrites précedemment.
+        On avance dans le processus en fonction de la valeur de la variable "next_step", 
+        qui est modifiée par les retours des fonctions de connexion et de création de compte.
+        '''
         self.client_soc=client_soc
+        #on initie next_step à menu pour accéder au menu du login
         self.next_step="menu"
         self.send_msg(self.client_soc,"Spotifree, la musique au bout du tunnel !\nAppuyez sur Entree pour continuer...\n")
+        #boucle while principale du menu redirigeant vers les fonctions appropriées.
         while self.next_step=="menu" or self.next_step == "connexion":  
             if self.next_step == "connexion" :
                 self.next_step=self.connexion(self.client_soc)
@@ -251,22 +276,26 @@ class ServerSocket():
                     self.creation(self.client_soc)
                 else :
                     self.send_msg(self.client_soc,"Option non reconnue.\n")
+        #si la connexion est validée, on lance la fonction du menu principal et l'utilisateur peut accéder aux différents services.
         if self.next_step == "spotiFREE":
             while True:
                 self.fonction_menu(self.client_soc,self.username)
+        #si next_step a une autre valeur que menu, connexion ou spotiFREE, on sort du programme.
         self.send_msg(self.client_soc,"Merci d'avoir utilisé spotiFREE !")
 
-# Gestion database
+    # Gestion database
     def recherche_spotipy(self,client_soc):
         '''
         Fonction qui demande au client via socket le nom de l'artiste, album ou musique pour executer la requete sql
         et renvoyer le resultat de cette requete au client via socket
+        utilisation de la fonction sp.getDiscography() programmée dans le fichier import_spotipy.py
         '''
         self.client_soc=client_soc
         self.table="listing"
         self.menu=" RECHERCHE :\n 1/ PAR ARTISTE\n 2/ PAR ALBUM\n 3/ PAR MUSIQUE\n 4/ RETOUR\n"
         self.send_msg(self.client_soc,self.menu)
         self.data = self.receive_msg(self.client_soc)
+        #on redirige vers l'option choisie
         if self.data == "1":
             self.colonnes="*"
             self.msg="Entrez le nom de l'artiste : "
@@ -302,7 +331,13 @@ class ServerSocket():
             self.client_soc.send(self.client_soc,self.msg)
             return(False)
 
+    #bloc de fonctions gérant le système de playlists
+    #TO DO : - option 2 à implémenter "partager une playlist"
+    #        - option 4 à implémenter "supprimer une playlist" 
     def afficher_playlist(self,client_soc,username):
+        '''
+        fonction permettant d'afficher les titres d'une playlist
+        '''
         self.client_soc=client_soc
         self.username=username
         self.menu="De quelle playlist voulez-vous afficher les titres ?\n"
@@ -316,6 +351,10 @@ class ServerSocket():
         self.send_msg(self.client_soc,self.reply)
 
     def partager_playlist(self,client_soc,username):
+        '''
+        fonction permettant de partager une playlist à un de ses amis
+        non fonctionnelle en l'état
+        '''
         self.client_soc=client_soc
         self.username=username
         self.menu="Quelle playlist voulez-vous partager ?\n"
@@ -330,6 +369,9 @@ class ServerSocket():
         #sql.insertion(self.table,self.colonnes,self.data)
 
     def creation_playlist(self,client_soc,username):
+        '''
+        fonction permettant de créer une playlist
+        '''
         self.client_soc=client_soc
         self.username=username
         self.msg="Choisissez un nom pour la playlist : "
@@ -339,6 +381,9 @@ class ServerSocket():
         sql.cur.execute(query)
         
     def gestion_playlist(self,client_soc,username):
+        '''
+        fonction principale implémentant le menu et les options disponibles pour gérer ses playlists
+        '''
         self.username=username
         self.condition="utilisateurs"+" LIKE \"%"+self.username+"%\""
         self.colonnes="titre_playlist"
@@ -363,7 +408,13 @@ class ServerSocket():
             self.client_soc.send(self.client_soc,self.msg)
             return(False)
 
+    #bloc de fonctions gérant le système d'ami
+    #TO DO : correction de bugs dans la suppression et l'ajout d'amis dans la BDD
+
     def add_friends(self,client_soc,username,friends) :
+        '''
+        fonction ajoutant un autre utilisateur à sa liste d'amis
+        '''
         self.client_soc=client_soc
         self.user=username
         self.friends=friends
@@ -372,6 +423,7 @@ class ServerSocket():
         self.send_msg(self.client_soc,self.menu)
         self.friendname = self.receive_msg(self.client_soc)
 
+        #on vérifie si l'ami à ajouter existe et s'il n'est pas déjà dans la lsite d'ami
         if not self.check_username(self.friendname) :
             self.send_msg(self.client_soc,"Cet utilisateur n'existe pas !\n")
         elif (f'{self.friendname}',) in self.friends :
@@ -384,6 +436,9 @@ class ServerSocket():
             self.send_msg(self.client_soc,self.msg)
 
     def delete_friends(self,client_soc,username,friends) :
+        '''
+        fonction supprimant un utilisateur de sa liste d'amis
+        '''
         self.client_soc=client_soc
         self.user=username
         self.friends=friends
@@ -391,7 +446,10 @@ class ServerSocket():
         self.menu="Veuillez entrer le nom d'un ami : "
         self.send_msg(self.client_soc,self.menu)
         self.friendname = self.receive_msg(self.client_soc)
+        print("friend : ",(f'{self.friendname}',))
+        print("friends : ",self.friends)
 
+        #on vérifie si l'ami à retirer est bien dans la lsite d'ami
         if not (f'{self.friendname}',) in self.friends :
             self.msg="Cet utilisateur n'est pas dans votre liste d'ami.\n"
             self.send_msg(self.client_soc,self.msg)
@@ -402,16 +460,24 @@ class ServerSocket():
             self.send_msg(self.client_soc,self.msg)
 
     def list_friends(self,username) :
+        '''
+        fonction permettant de lister les amis d'un utilisateur
+        '''
         self.username=username
         sql.cur.execute("SELECT amis FROM spotifriends WHERE pseudo LIKE \'"+self.username+"\'")
         self.friends=sql.cur.fetchall()
         return(self.friends)
 
     def spotifriends(self,client_soc,username):
+        '''
+        fonction principale implémentant le menu et les options disponibles pour gérer sa liste d'amis.
+        '''
         self.client_soc=client_soc
         self.username=username
         self.exit="0"
+        #boucle principale. Tant que l'utilisateur ne demande pas à retourner au menu principal, on lui repropose le menu spotifreinds.
         while self.exit == "0":
+            #on commence chaque boucle par afficher sa liste d'amis et le menu des options disponibles.
             self.friends=self.list_friends(self.username)
             if self.friends == [] :
                 self.msg="Ajoutez des amis pour partager vos playlists !\n"
@@ -437,20 +503,18 @@ class ServerSocket():
                 pass
 
             
-##########################
+    ##########################
     def fonction_menu(self,client_soc,username):
         '''
         Fonction qui affiche un menu au client via socket, pour choisir les actions
         que le client souhaite realiser
-        TO DO => envoyer le pseudo en parametre de la fonction menu
-        pour le moment pseudo arbitraire = arthur
+        Cette fonction est appelée dans la fonction login après l'identification de l'utilisateur.
         '''
         self.username=username
         self.client_soc=client_soc
         self.menu=" 1/ Faire une recherche\n 2/ Gestion des playlists\n 3/ Mes ami.es\n "
         self.send_msg(self.client_soc,self.menu)
         self.data = self.receive_msg(self.client_soc)
-
         if self.data == "1":
             self.recherche_spotipy(self.client_soc)
         elif self.data == "2":
@@ -459,12 +523,13 @@ class ServerSocket():
             self.spotifriends(self.client_soc,self.username)
         else:
             pass
-##########################
+    ##########################
 
-# Fonctions de connection et de lancement, génération des threads
+    # Fonctions de connection et de lancement, génération des threads
     def FONCTION_THREAD(self, client_soc):
         '''
-        Ce qui se passe sur chaque thread pour chaque client => equivalent de notre main !!
+        Cette fonction est appelée à chaque lancement de thread, pour chaque client qui se connecte au serveur.
+        Elle lance la fonction login qui permet à l'utilisateur de s'identifier afin d'accéder à Spotifree.
         '''
         self.client_soc=client_soc
         self.login(self.client_soc)                          
@@ -472,7 +537,7 @@ class ServerSocket():
 
     def accept_connection(self):
         '''
-        Fonction qui accepte les connexions socket et attribue un fil (thread) a chaque utilisateur
+        Fonction qui accepte les connexions socket et attribue un fil (thread) a chaque utilisateur.
         '''
         new_client=None
         address=None
@@ -493,6 +558,8 @@ class ServerSocket():
 
     def run(self) :
         self.accept_connection()
+
+
 # Main
 host="127.0.0.1"
 port=9868
