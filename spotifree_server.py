@@ -371,59 +371,57 @@ class ServerSocket():
         self.menu="Veuillez entrer le nom d'un ami : "
         self.send_msg(self.client_soc,self.menu)
         self.friendname = self.receive_msg(self.client_soc)
-        print("ici la data pour l'insertion : "+f"(\'{self.user}\',\'{self.friendname}\')")
+
         if not self.check_username(self.friendname) :
             self.send_msg(self.client_soc,"Cet utilisateur n'existe pas !\n")
-        elif self.friendname in self.friends :
+        elif (f'{self.friendname}',) in self.friends :
             self.msg="Vous êtes déjà amis avec "+self.friendname+" !\n"
             self.send_msg(self.client_soc,self.msg)
         else :
             self.data=f"(\'{self.user}\',\'{self.friendname}\')"
-            print("ici la data pour l'insertion : "+f"(\'{self.user}\',\'{self.friendname}\')")
             sql.insertion("spotifriends","pseudo,amis",self.data)
             self.msg=self.friendname+" ajouté à la liste d'ami !\n"
             self.send_msg(self.client_soc,self.msg)
 
     def delete_friends(self,client_soc,username,friends) :
         self.client_soc=client_soc
-        self.username=username
+        self.user=username
         self.friends=friends
         
         self.menu="Veuillez entrer le nom d'un ami : "
         self.send_msg(self.client_soc,self.menu)
         self.friendname = self.receive_msg(self.client_soc)
 
-        if not self.friendname in self.friends :
+        if not (f'{self.friendname}',) in self.friends :
             self.msg="Cet utilisateur n'est pas dans votre liste d'ami.\n"
             self.send_msg(self.client_soc,self.msg)
         else :
-            self.data=f"pseudo LIKE \'{self.username}\' and amis LIKE \'{self.friendname}\'"
-            sql.delete("spotifriends",self.data)
+            self.data=f"pseudo LIKE \'{self.user}\' and amis LIKE \'{self.friendname}\'"
+            sql.delete(self.data,"spotifriends")
             self.msg=self.friendname+" supprimé de la liste d'ami.\n"
             self.send_msg(self.client_soc,self.msg)
 
     def list_friends(self,username) :
         self.username=username
-        self.table="spotifriends"
-        self.colonnes="amis"
-        self.condition="pseudo LIKE \""+self.username+"\""
-        self.friends=sql.search(self.condition,self.colonnes,self.table)
-        print("result ici : ",self.friends)
+        sql.cur.execute("SELECT amis FROM spotifriends WHERE pseudo LIKE \'"+self.username+"\'")
+        self.friends=sql.cur.fetchall()
         return(self.friends)
 
     def spotifriends(self,client_soc,username):
         self.client_soc=client_soc
         self.username=username
-        self.friends=self.list_friends(self.username)
-        if self.friends == '' :
-            self.msg="Ajoutez des amis pour partager vos playlists !\n"
-            self.send_msg(self.client_soc,self.msg)
-        else :
-            self.msg="Liste de vos amis : "+self.friends
-            self.send_msg(self.client_soc,self.msg)
-
         self.exit="0"
         while self.exit == "0":
+            self.friends=self.list_friends(self.username)
+            if self.friends == [] :
+                self.msg="Ajoutez des amis pour partager vos playlists !\n"
+                self.send_msg(self.client_soc,self.msg)
+            else :
+                self.msg="Liste de vos amis : "
+                for ami in self.friends :
+                    self.msg=self.msg+ami[0]+" | "
+                self.msg=self.msg+"\n"
+                self.send_msg(self.client_soc,self.msg)
 
             self.menu="1/ Ajouter un ami\n2/ Supprimer un ami\n3/ Retour Menu\n"
             self.send_msg(self.client_soc,self.menu)
@@ -437,6 +435,7 @@ class ServerSocket():
                 self.exit= "1"
             else :
                 pass
+
             
 ##########################
     def fonction_menu(self,client_soc,username):
