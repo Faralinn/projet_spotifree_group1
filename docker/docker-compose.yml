@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+    database:
+        image: mariadb
+        container_name: spoti_db
+        restart: always
+        environment:
+           - MARIADB_USER=spoti
+           - MARIADB_PASSWORD=spotipass
+           - MARIADB_DATABASE=spotifree
+           - MARIADB_ROOT_PASSWORD=spotipass
+        ports:
+           - 3306:3306
+        volumes:
+           - ${PWD}/db_data:/var/lib/mysql
+        
+    vsftpd:
+        image: fauria/vsftpd
+        container_name: spoti_ftp
+        restart: always
+        environment:
+           - FTP_USER=spoti
+           - FTP_PASS=spotipass
+        ports:
+           - 21000:21
+        volumes:
+           - /home/${USER}/Musique:/home/vsftpd
+
+    nginx:
+        image: nginx/proxyftp
+        container_name: nginx_proxyftp
+        volumes:
+          - /nginx_container/http.conf:/etc/nginx/http.conf:ro
+        ports:
+          - "8001:80"
