@@ -1,7 +1,6 @@
 version: '3'
 
 services:
-      #serveur de base de donnees
     database:
         image: mariadb
         container_name: spoti_db
@@ -11,6 +10,8 @@ services:
            - MARIADB_PASSWORD=spotipass
            - MARIADB_DATABASE=spotifree
            - MARIADB_ROOT_PASSWORD=spotipass
+        ports:
+           - 3306:3306
         volumes:
            - ${PWD}/db_data:/var/lib/mysql
         
@@ -22,8 +23,14 @@ services:
            - FTP_USER=spoti
            - FTP_PASS=spotipass
         ports:
-           - 21:21
+           - 21000:21
         volumes:
-           - /home/camille/Musique:/home/vsftpd
+           - /home/${USER}/Musique:/home/vsftpd
 
-
+    nginx:
+        image: nginx/proxyftp
+        container_name: nginx_proxyftp
+        volumes:
+          - /nginx_container/http.conf:/etc/nginx/http.conf:ro
+        ports:
+          - "8001:80"
